@@ -4,11 +4,8 @@ full_ma_data <- read_rds('data/output/full_ma_data.rds')
 final_ma_data<- read_rds("data/output/final_ma_data.rds")
 # Question 1 
 
-final.plans <- final_ma_data %>%
-  filter(snp== 'No' & eghp == "No" &
-           (planid < 800 | planid >= 900))
 
-question1 <- final.plans %>% group_by(county, year) %>% summarize(n = n())
+question1 <- final_ma_data %>% group_by(county, year) %>% summarize(n = n())
 
 q1.plot <- question1 %>%
   ggplot(aes(x = factor(year), y = log(n))) +
@@ -30,6 +27,7 @@ df_q2 <- final_ma_data%>%
   filter(!is.na(Star_Rating))
 
 
+# Add filter by fips 
 graph_2 <- ggplot(df_q2, aes(x = Star_Rating, y = count, fill = as.factor(year))) + 
   geom_bar(position = "dodge", stat = "identity") + 
   labs(x = "Star Ratings", y = "Count", title = "Distribution of Star Ratings (2009, 2012,2015)") +
@@ -46,19 +44,23 @@ q3.plot <- final_ma_data %>%
   group_by(year) %>% 
   summarize(avg_rate = mean(ma_rate, na.rm =TRUE))%>% 
 ggplot( aes(year, avg_rate))+
-  geom_line()
+  geom_col()
 
 
 # Question 4 
 
 
-q4.plot <- final.plans %>% group_by(year)%>% 
+df <- final_ma_data %>% group_by(fips, year)%>% 
   filter(year >= 2009 & year <= 2015) %>% 
-  summarize(n = mean(partd == "Yes")) %>% 
-  ggplot(aes(year, n))+
+  summarize(enroll = first(avg_enrolled), medicare = first(avg_eligibles), bench = mean(ma_rate, na.rm = TRUE)) %>%
+  mutate(mkt_share = enroll/medicare) %>% 
+  group_by(year)%>% 
+  summarize(avg_share = mean(mkt_share, na.rm = TRUE))
+
+ggplot(df, aes(year, avg_share))+
   geom_line()
 
-
+q4.plot
 # Question 5 
 
 final.data.2009 <- final.plans %>% filter(year == 2009)
@@ -142,16 +144,18 @@ reg_b015 <- rdrobust(y=q6.table$mkt_share, x=q6.table$score1, c=0,
 
 # Question 8 
 
-
-q8.plot3 <- rdplot(y=q6.table$mkt_share, x=q6.table$score1, binselect="es",
+filtered_data <- q6.table %>% filter(Star_Rating == 2.5 | Star_Rating == 3)
+q8.plot3 <-  rdplot(y=filtered_data$mkt_share, x=filtered_data$score1, binselect="es",
        title="RD Plot: Market Share for 2.5 vs. 3 Star Rating", x.label="Summary Score",
        y.label="Market Share", masspoints="off")
 
 
-q8.plot4<- rdplot(y=q6.table$mkt_share, x=q6.table$score2, binselect="es",
+filtered_data2 <- q6.table %>% filter(Star_Rating == 3 | Star_Rating == 3.5)
+q8.plot4<- rdplot(y=filtered_data2$mkt_share, x=filtered_data2$score2, binselect="es",
                   title="RD Plot: Market Share for 3 vs. 3.5 Star Rating", x.label="Summary Score",
                   y.label="Market Share", masspoints="off")
 
+filtered_data3 <- q6.table %>% filter(Star_Rating == 3.5 | Star_Rating == 4)
 q8.plot5 <- rdplot(y=q6.table$mkt_share, x=q6.table$score3, binselect="es",
                    title="RD Plot: Market Share for 3.5 vs. 4 Star Rating", x.label="Summary Score",
                    y.label="Market Share", masspoints="off")
@@ -164,8 +168,14 @@ sum1 <- q6.table %>% filter(score1>-0.25 & score1<0.25)
 
 sum1$above <- ifelse(sum1$score1 > 0, 1,0 )
 
-sum1 %>% group_by(above) %>% summarize(prop_partd = mean(partd == "Yes"))
+tab9 <- sum1 %>% group_by(above) %>% summarize(prop_partd = mean(partd == "Yes"))
+
+save.image("image.Rdata")
 
 
 
+#Class notes
 
+# Organize code better, clean data 
+# Biggest bandwidth is 0.5 
+# use matchit to make plots of covariates (HMO's in plan type )
