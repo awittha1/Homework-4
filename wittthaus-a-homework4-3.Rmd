@@ -1,0 +1,168 @@
+---
+title: 'Homework 4 - Research in Health Economics'
+author: "Alexia Witthaus Viñé"
+date: "`r Sys.Date()`"
+header-includes:
+  - \usepackage{booktabs}
+output: 
+  bookdown::pdf_document2:
+    fig_caption: yes
+    toc: false
+---
+
+
+
+```{r, echo = FALSE}
+load("image.Rdata")
+library(modelsummary)
+library(kableExtra)
+library(rdrobust)
+library(rddensity)
+library(lemon)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE, fig.width = 16/2, fig.height = 9/2, tidy.opts=list(width.cutoff=60), tidy=TRUE)
+```
+
+# Summary of the data
+
+```{r county, fig.cap="Average number of plans per county"}
+q1.plot
+```
+
+
+Looking at the data, it looks like from 2007-2015, there were too many plans, as there where many high numbers, that skewed the results and the 50-75% range is higher than the 25-50%. This difference is significantly smaller 2011-2013, but then gets bigger again, suggesting that there might be too many plans again
+
+\newpage
+
+
+```{r distr, fig.cap = "Distribution of Star Ratings per Year"}
+graph_2
+```
+
+
+
+Hospitals  seem to have higher ratings overall. The average rating seems to increase year by year.It  seems as if the distribution gets shift to the right every year. 
+
+
+\newpage
+```{r benchmark, fig.cap="Average benchmark rate per Year"}
+q3.plot
+```
+
+
+Benchmark ratings have not varied much over time. Looking at the graph \@ref(fig:benchmark), one can observe a small increase in benchmark payment over years, particularly in 2014, but in 2015, the average payment has decreased again.  
+
+
+
+\newpage
+
+```{r share, fig.cap = "Share of Medicare Advantage over Time"}
+q4.plot
+```
+
+
+
+Medicare has increased in popularity. However, the slope seems to decrease over time. This might be correlated with the fact that Benchmark Payment has decreased in 2015. The highest area of increase (between 2011 and 2014), is also correlated with an increase in the benchmark rate. 
+
+\newpage
+
+# Estimate ATE's 
+
+## Number of plans that are rounded up for every Star Rating
+
+```{r tab, render=lemon_print }
+q5.table  
+```
+
+## Estimate of the effect of recieving the higher Star Rating on Market Share
+
+
+```{r}
+modelsummary(list("Star 3.0"=star30, "Star 3.5 "=star35, "Star 4.0"=star40, "Star 4.5"=star45), 
+                       title="Estimates for different star ratings", 
+                       coef_map=c('treatTRUE'="Treatment",
+                                  'Score'="score"), 
+                       gof_map=list(list("raw"="nobs","clean"="N", "fmt"=0),
+                                    list("raw"="r.squared", "clean"="R^2", "fmt"=2))) %>%
+kable_styling(latex_options=c("hold_position"), full_width = TRUE, position="center")
+```
+
+
+\newpage
+
+
+##  Estimate of the effect of recieving the higher Star Rating on Market Share using different bandwidths
+
+```{r bw, fig.cap = "Point estimates with 95% CI with different bandwidths"}
+question7
+```
+
+
+Figure \@ref(fig:bw) shows the estimates using different bandwidths. When the bandwidth is very small (0.1), the results seem to be inaccurate, given that they all include 0, while bigger values for the bandwidth do not. The results seem to be consistent with higher values of the bandwidth. However, when the bandwidth gets too big (0.14-0.15), the confidence intervals include 0 again, which is likely due to the extrapolation error caused by the big bandwidth. 
+
+
+
+## Do contracts manipulate the running variable?  
+
+```{r, fig.width = 12/2, fig.height = 5/2}
+rd_3$Estplot
+```
+
+```{r, fig.width = 12/2, fig.height = 5/2}
+rd_35$Estplot
+```
+
+
+```{r, fig.width = 12/2, fig.height = 5/2}
+rd_4$Estplot
+```
+
+
+From the figures shown above, it does not seem like contracts manipulate the running variable. However, it seems like there is not a lot of observations at every point of the running variable, which leads to the running variable not really being continuous. This might create a different problem, but manipulation across the threshold does not seem to be a problem. 
+
+
+\newpage 
+
+
+## Covariate balance for HMO's and Part D close to the threshold
+
+```{r, fig.width = 12/2, fig.height = 5/2}
+plot.30 
+```
+```{r, fig.width = 12/2, fig.height = 5/2}
+plot.35
+```
+
+```{r, fig.width = 12/2, fig.height = 5/2}
+plot.4 
+```
+
+
+Looking at the graphs, one can conclude that the difference in means is not too big. It is not 0, but the difference is not big, and in particular, since this difference is not consistent across the different Star Ratings. 
+
+
+
+\newpage
+
+## Question 6 
+
+From my previous analysis, I can conclude that for low raw ratings the effect of having a higher Star Rating is positive, while for higher raw ratings, the effect is negative. This means that for plans with a low raw rating (around 2.75) close to the threshold , being rounded up has a positive effect on market share. However, for higher raw rating (3.25 or 3.75), the plans that are close to the threshold being  rounded up seem to experience a negative effect on market share. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
